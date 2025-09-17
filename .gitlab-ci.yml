@@ -1,0 +1,31 @@
+image: gcr.io/kaniko-project/executor:v1.23.2-debug
+
+stages:
+  - build
+
+include:
+  - project: 'dev_ops/valor/ci-templates'
+    ref: master
+    file: 'build-and-push-base.yml'
+    
+variables:
+  VAULT_SERVER_URL: "https://vault.dev.valor-team.cc"
+  VAULT_AUTH_PATH: "jwt"
+  VAULT_AUTH_ROLE: "gitlab"
+
+build_and_push:
+  id_tokens:
+    VAULT_ID_TOKEN:
+      aud:
+        - "https://vault.dev.valor-team.cc"
+
+  secrets:
+    AUTH_JSON:
+      vault: gitlabci/AUTH_JSON@internal
+      token: $VAULT_ID_TOKEN
+
+  extends: .build_and_push_base
+  variables:
+    APP_NAME: git-files-plugin
+
+
