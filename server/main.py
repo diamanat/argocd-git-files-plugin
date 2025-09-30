@@ -65,8 +65,10 @@ def find_matching_repo_secret(repo_url: str, namespace: str = "argocd") -> Optio
     parsed = urlparse(repo_url)
     host = parsed.netloc
     try:
-        # Filter by Argo CD secret types: repository or repository-credentials
-        secrets = v1.list_namespaced_secret(namespace, label_selector="argocd.argoproj.io/secret-type in (repository,repository-credentials)")
+        secrets = v1.list_namespaced_secret(
+            namespace,
+            label_selector="argocd.argoproj.io/secret-type in (repository,repo-creds,repository-credentials)",
+        )
     except ApiException as exc:  # noqa: BLE001
         raise HTTPException(status_code=500, detail=f"k8s error listing secrets: {exc}")
 
