@@ -1,0 +1,82 @@
+name: Build and publish Helm chart
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - "v*"
+      - "*.*.*"
+  pull_request:
+
+jobs:
+  helm:
+    name: Build and push Helm chart to GHCR
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.14.4
+
+      - name: Log in to GHCR for Helm
+        if: github.event_name != 'pull_request'
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io --username "${{ github.actor }}" --password-stdin
+
+      - name: Determine chart name and version
+        id: chartmeta
+        run: |
+          set -euo pipefail
+          CHART_DIR=chart
+          CHART_NAME=$(awk -F": " '/^name:/{print $2}' "${CHART_DIR}/Chart.yaml" | tr -d '"')
+          CHART_VERSION=$(awk -F": " '/^version:/{print $2}' "${CHART_DIR}/Chart.yaml" | tr -d '"')
+          echo "CHART_NAME=${CHART_NAME}" >> $GITHUB_ENV
+          echo "CHART_VERSION=${CHART_VERSION}" >> $GITHUB_ENV
+
+      - name: Package Helm chart
+        run: |
+          set -euo pipefail
+          helm package chart --destination .
+          CHART_PACKAGE=$(ls ./*.tgz)
+          echo "CHART_PACKAGE=${CHART_PACKAGE}" >> $GITHUB_ENV
+
+      - name: Push Helm chart to GHCR
+        if: github.event_name != 'pull_request'
+        run: |
+          set -euo pipefail
+          helm push "${CHART_PACKAGE}" oci://ghcr.io/${{ github.repository_owner }}
+
+      - name: Make GHCR package public
+        if: github.event_name != 'pull_request'
+        env:
+          OWNER: ${{ github.repository_owner }}
+          PACKAGE: ${{ env.CHART_NAME }}
+          TOKEN: ${{ secrets.GHCR_PAT != '' && secrets.GHCR_PAT || secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          echo "Making public: ghcr.io/${OWNER}/${PACKAGE}"
+          code=$(curl -sS -o /dev/null -w "%{http_code}" -X PUT \
+            -H "Authorization: Bearer ${TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/orgs/${OWNER}/packages/container/${PACKAGE}/visibility \
+            -d '{"visibility":"public"}')
+          if [ "${code:0:1}" = "2" ]; then
+            echo "Visibility updated via org endpoint (HTTP $code)."
+            exit 0
+          fi
+          code=$(curl -sS -o /dev/null -w "%{http_code}" -X PUT \
+            -H "Authorization: Bearer ${TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/user/packages/container/${PACKAGE}/visibility \
+            -d '{"visibility":"public"}')
+          if [ "${code:0:1}" = "2" ]; then
+            echo "Visibility updated via user endpoint (HTTP $code)."
+            exit 0
+          fi
+          echo "Warning: could not set package visibility (HTTP $code). Ensure TOKEN has packages:write scope."
