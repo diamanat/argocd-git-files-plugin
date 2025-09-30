@@ -48,7 +48,7 @@ spec:
           env:
           {{ if .Values.env}}
           {{ range $name, $value:= .Values.env }}
-            - name: {{ .name }}
+            - name: {{ $name }}
               value: {{ $value }}
           {{ end }}
           {{ end }}
