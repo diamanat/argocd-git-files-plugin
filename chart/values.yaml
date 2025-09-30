@@ -29,5 +29,16 @@ startupProbe: {}
 livenessProbe: {}
 resources: {}
 
+podAnnotations: {}
+podSecurityContext: {}
+securityContext: {}
+revisionHistoryLimit: 10
+strategy: {}
+deployAnnotations: {}
+fullnameOverride: ""
+nameOverride: ""
+selectorLabels: {}
 serviceAccount:
   create: true
+  name: ""
+  annotations: {}
