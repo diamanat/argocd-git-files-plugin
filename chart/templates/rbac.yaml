@@ -15,7 +15,7 @@ metadata:
   namespace: argocd
 subjects:
   - kind: ServiceAccount
-    name: argocd-git-files-plugin-valor
+    name: {{ include "this.serviceAccountName" . }}
     namespace: argocd
 roleRef:
   apiGroup: rbac.authorization.k8s.io

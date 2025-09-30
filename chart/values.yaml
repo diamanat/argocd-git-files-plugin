@@ -39,5 +39,4 @@ nameOverride: ""
 selectorLabels: {}
 serviceAccount:
   create: true
-  name: ""
   annotations: {}
