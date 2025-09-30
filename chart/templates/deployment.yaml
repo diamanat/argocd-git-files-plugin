@@ -52,6 +52,12 @@ spec:
               value: {{ $value }}
           {{ end }}
           {{ end }}
+          {{ if .Values.command}}
+          command:
+            {{- toYaml .Values.command | nindent 12 }}
+          args:
+            {{- toYaml .Values.args | nindent 12 }}
+          {{ end }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           ports:
