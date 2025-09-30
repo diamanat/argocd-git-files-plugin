@@ -1,0 +1,14 @@
+{{- if .Values.env }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "this.fullname" $ }}-env
+  labels:
+    {{- include "this.labels" $ | nindent 4 }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+
+data:
+  {{ include "this.tplvalues.render" ( dict "value" .Values.env "context" $ ) | nindent 2 }}
+{{- end }}
