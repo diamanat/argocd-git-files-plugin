@@ -113,6 +113,16 @@ def find_matching_repo_secret(repo_url: str, namespace: str = "argocd") -> Optio
             }
             best_score = score
 
+    if best:
+        try:
+            logger.info(
+                "matched repo secret: url=%s has_username=%s has_password=%s has_ssh_key=%s",
+                best.get("url"), bool(best.get("username")), bool(best.get("password")), bool(best.get("sshPrivateKey")),
+            )
+        except Exception:
+            pass
+    else:
+        logger.info("no matching repo secret found for host: %s", host)
     return best
 
 
@@ -137,6 +147,7 @@ def run_git_clone(repo_url: str, revision: str, target_dir: Path) -> None:
         ssh_key_path.write_text(creds["sshPrivateKey"], encoding="utf-8")
         os.chmod(ssh_key_path, 0o600)
         git_env["GIT_SSH_COMMAND"] = f"ssh -i {ssh_key_path} -o StrictHostKeyChecking=accept-new"
+        logger.info("git auth: using SSH key for host=%s", parsed.netloc)
 
     # If we have username/password (or token), inject into https URL
     elif creds and (creds.get("password") or creds.get("username")):
@@ -146,6 +157,13 @@ def run_git_clone(repo_url: str, revision: str, target_dir: Path) -> None:
             pwd = quote((creds.get("password") or ""), safe="")
             netloc = f"{user}:{pwd}@{parsed.netloc}"
             repo_url = parsed._replace(netloc=netloc).geturl()
+            logger.info("git auth: using HTTPS credentials for host=%s username=%s", parsed.netloc, user)
+    else:
+        try:
+            parsed = urlparse(repo_url)
+            logger.info("git auth: no credentials found for host=%s, cloning anonymously", parsed.netloc)
+        except Exception:
+            pass
 
     try:
         subprocess.run(
