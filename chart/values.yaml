@@ -5,14 +5,13 @@ externalSecrets:
     kind: ClusterSecretStore
 
 image:
-  repository: "docker.artifactory.top"
-  pullSecrets:
-    vault_key: "dev"
-    vault_property: "artifactory"
+  repository: "ghcr.io"
+  name: "diamanat/files-plugin"
+  tag: "latest"
   pullPolicy: Always
 
 env:
-  baseUrl: http://argocd-git-files-plugin-valor-plugin.argocd.svc.cluster.local:8000
+  baseUrl: http://files-plugin.argocd.svc.cluster.local:8000
   token: "$plugin.git-files.token"
 
 service:
