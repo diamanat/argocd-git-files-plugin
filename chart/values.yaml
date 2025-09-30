@@ -6,7 +6,7 @@ externalSecrets:
 
 image:
   repository: "ghcr.io"
-  name: "diamanat/files-plugin"
+  name: "diamanat/argocd-git-files-plugin"
   tag: "latest"
   pullPolicy: Always
 
