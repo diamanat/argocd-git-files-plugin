@@ -90,6 +90,14 @@ def find_matching_repo_secret(repo_url: str, namespace: str = "argocd") -> Optio
         password = decode(data, "password")
         ssh_key = decode(data, "sshPrivateKey")
 
+        has_https_auth = bool(password)
+        has_ssh_auth = bool(ssh_key)
+
+        # Игнорируем секреты без реальных кредов (ни password, ни ssh ключа)
+        # чтобы не перекрывать ими repo-creds, у которых есть токен.
+        if not has_https_auth and not has_ssh_auth:
+            continue
+
         score = 0
         if url:
             p = urlparse(url)
@@ -98,11 +106,11 @@ def find_matching_repo_secret(repo_url: str, namespace: str = "argocd") -> Optio
             # Prefer longer prefix matches
             if repo_url.startswith(url):
                 score += len(url)
-        # Prefer exact auth types available
-        if password:
-            score += 1
-        if ssh_key:
-            score += 1
+        # Сильнее взвешиваем наличие реальной аутентификации
+        if has_https_auth:
+            score += 1000
+        if has_ssh_auth:
+            score += 1000
 
         if score > best_score:
             best = {
