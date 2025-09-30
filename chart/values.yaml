@@ -1,0 +1,33 @@
+externalSecrets:
+  refreshInterval: "15s"
+  secretStoreRef:
+    name: vault-backend
+    kind: ClusterSecretStore
+
+image:
+  repository: "docker.artifactory.top"
+  pullSecrets:
+    vault_key: "dev"
+    vault_property: "artifactory"
+  pullPolicy: Always
+
+env:
+  baseUrl: http://argocd-git-files-plugin-valor-plugin.argocd.svc.cluster.local:8000
+  token: "$plugin.git-files.token"
+
+service:
+  clusterIP: None
+  port: 8000
+  targetPort: 8000
+  name: http
+  protocol: TCP
+
+nodeSelector: {}
+affinity: {}
+tolerations: {}
+startupProbe: {}
+livenessProbe: {}
+resources: {}
+
+serviceAccount:
+  create: true
